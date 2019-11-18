@@ -44,8 +44,9 @@ const buildRouter = (admin, predefinedRouter) => {
   routes.forEach((route) => {
     // we have to change routes defined in AdminBro from {recordId} to :recordId
     const expressPath = route.path.replace(/{/g, ':').replace(/}/g, '')
-
     const handler = async (req, res) => {
+      console.log('===== begin handler =====')
+
       try {
         const controller = new route.Controller({ admin }, req.session && req.session.adminUser)
         const { params, query } = req
@@ -54,16 +55,28 @@ const buildRouter = (admin, predefinedRouter) => {
         const html = await controller[route.action]({
           ...req, params, query, payload, method,
         }, res)
+        console.log(route)
+        console.log(params, query, payload, method)
         if (route.contentType) {
           res.set({ 'Content-Type': route.contentType })
         }
-        if (html) {
+        if (route.Controller.name == 'ApiController'){
           res.send(html)
+        } else if (route.contentType) {
+          res.send(html)
+        } else if (html) {
+          // res.send(html)
+          res.render('layout', {
+            adminBroHead: html.head,
+            adminBroBody: html.body
+        })
         }
       } catch (e) {
         // eslint-disable-next-line no-console
         console.log(e)
       }
+      console.log('===== end handler =====')
+
     }
 
     if (route.method === 'GET') {
